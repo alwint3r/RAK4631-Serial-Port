@@ -24,6 +24,15 @@ func findPort(vid, pid string) (*enumerator.PortDetails, error) {
 	return nil, nil
 }
 
+func openPort(name string) (serial.Port, error) {
+	return serial.Open(name, &serial.Mode{
+		BaudRate: 115200,
+		DataBits: 8,
+		Parity:   serial.NoParity,
+		StopBits: serial.OneStopBit,
+	})
+}
+
 func main() {
 	vid := "239A"
 	pid := "8029"
@@ -39,12 +48,7 @@ func main() {
 
 	log.Println("Found port:", portDetails.Name)
 
-	port, err := serial.Open(portDetails.Name, &serial.Mode{
-		BaudRate: 115200,
-		DataBits: 8,
-		Parity:   serial.NoParity,
-		StopBits: serial.OneStopBit,
-	})
+	port, err := openPort(portDetails.Name)
 
 	if err != nil {
 		log.Fatal(err)
@@ -57,14 +61,23 @@ func main() {
 	for {
 		buf := make([]byte, 1024)
 		_, err := port.Read(buf)
-		if err != nil {
+		if err != nil && err.Error() != "device not configured" {
 			log.Fatal(err)
+		}
+
+		if err != nil && err.Error() == "device not configured" {
+			newPort, err := openPort(portDetails.Name)
+			if err != nil {
+				continue
+			}
+			port = newPort
 		}
 
 		for _, b := range buf {
 			if b == '\n' {
 				stringBuffer = strings.ReplaceAll(stringBuffer, "\r", "")
-				fmt.Println(stringBuffer)
+				stringBuffer = strings.ReplaceAll(stringBuffer, "\n", "")
+				fmt.Printf("%s\r\n", stringBuffer)
 				stringBuffer = ""
 			} else {
 				stringBuffer += string(b)
