@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/acarl005/stripansi"
 	"go.bug.st/serial"
 	"go.bug.st/serial/enumerator"
 )
@@ -77,6 +78,7 @@ func main() {
 			if b == '\n' {
 				stringBuffer = strings.ReplaceAll(stringBuffer, "\r", "")
 				stringBuffer = strings.ReplaceAll(stringBuffer, "\n", "")
+				stringBuffer = stripansi.Strip(stringBuffer)
 				fmt.Printf("%s\r\n", stringBuffer)
 				stringBuffer = ""
 			} else {
