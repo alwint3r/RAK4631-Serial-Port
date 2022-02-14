@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/acarl005/stripansi"
 	"go.bug.st/serial"
@@ -38,13 +39,22 @@ func main() {
 	vid := "239A"
 	pid := "8029"
 
-	portDetails, err := findPort(vid, pid)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Println("Looking for device with VID:", vid, "PID:", pid)
 
-	if portDetails == nil {
-		log.Fatal("No port found")
+	var portDetails *enumerator.PortDetails
+	var err error
+
+	for {
+		portDetails, err = findPort(vid, pid)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if portDetails != nil {
+			break
+		}
+
+		time.Sleep(time.Second * 1)
 	}
 
 	log.Println("Found port:", portDetails.Name)
@@ -75,6 +85,10 @@ func main() {
 		}
 
 		for _, b := range buf {
+			if b == 0 {
+				continue
+			}
+
 			if b == '\n' {
 				stringBuffer = strings.ReplaceAll(stringBuffer, "\r", "")
 				stringBuffer = strings.ReplaceAll(stringBuffer, "\n", "")
@@ -87,3 +101,5 @@ func main() {
 		}
 	}
 }
+
+// ESC[0;31m E
