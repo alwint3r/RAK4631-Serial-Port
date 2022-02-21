@@ -72,16 +72,18 @@ func main() {
 	for {
 		buf := make([]byte, 1024)
 		_, err := port.Read(buf)
-		if err != nil && err.Error() != "device not configured" {
-			log.Fatal(err)
-		}
-
-		if err != nil && err.Error() == "device not configured" {
-			newPort, err := openPort(portDetails.Name)
-			if err != nil {
-				continue
+		if err != nil {
+			errMsg := err.Error()
+			errMsg = strings.ToLower(errMsg)
+			if errMsg == "device not configured" || strings.Contains(errMsg, "port has been closed") || strings.Contains(errMsg, "the device does not recognize the command") {
+				newPort, err := openPort(portDetails.Name)
+				if err != nil {
+					continue
+				}
+				port = newPort
+			} else {
+				log.Fatal(err)
 			}
-			port = newPort
 		}
 
 		for _, b := range buf {
